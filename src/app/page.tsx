@@ -38,11 +38,29 @@ export default function Home() {
     STEPS_CONFIG.map(s => ({ ...s, status: 'pending' }))
   );
 
-  // Auto-generate slug from clientName
+  const generateSlug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
   const handleClientNameChange = (val: string) => {
     setClientName(val);
-    if (!slug || slug === clientName.toLowerCase().replace(/[^a-z0-9]/g, '-')) {
-      setSlug(val.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, ''));
+    const expectedSlug = generateSlug(clientName);
+    const newSlug = generateSlug(val);
+
+    if (!slug || slug === expectedSlug) {
+      setSlug(newSlug);
+      const expectedDomain = expectedSlug ? `${expectedSlug}.mamdix.cloud` : '';
+      if (!baseDomain || baseDomain === expectedDomain) {
+        setBaseDomain(newSlug ? `${newSlug}.mamdix.cloud` : '');
+      }
+    }
+  };
+
+  const handleSlugChange = (val: string) => {
+    const newSlug = val.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+    const expectedDomain = slug ? `${slug}.mamdix.cloud` : '';
+    setSlug(newSlug);
+
+    if (!baseDomain || baseDomain === expectedDomain) {
+      setBaseDomain(newSlug ? `${newSlug}.mamdix.cloud` : '');
     }
   };
 
@@ -136,7 +154,7 @@ export default function Home() {
               <input
                 type="text"
                 value={slug}
-                onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
+                onChange={(e) => handleSlugChange(e.target.value)}
                 required
                 placeholder="Ej: lattafa"
                 disabled={loading}
@@ -199,9 +217,9 @@ export default function Home() {
                     {step.status === 'pending' && <span className="text-neutral-700 text-sm">○</span>}
                   </span>
                   <span className={`text-sm ${step.status === 'done' ? 'text-neutral-300' :
-                      step.status === 'running' ? 'text-white font-medium' :
-                        step.status === 'error' ? 'text-red-400' :
-                          'text-neutral-600'
+                    step.status === 'running' ? 'text-white font-medium' :
+                      step.status === 'error' ? 'text-red-400' :
+                        'text-neutral-600'
                     }`}>
                     {step.label}
                   </span>
@@ -214,8 +232,8 @@ export default function Home() {
         {/* Result */}
         {result && (
           <section className={`border rounded-2xl p-6 ${result.success
-              ? 'bg-green-950/20 border-green-900/40'
-              : 'bg-red-950/20 border-red-900/40'
+            ? 'bg-green-950/20 border-green-900/40'
+            : 'bg-red-950/20 border-red-900/40'
             }`}>
             {result.success ? (
               <>
