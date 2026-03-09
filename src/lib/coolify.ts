@@ -95,18 +95,36 @@ export async function setEnvironmentVariables(
 }
 
 /**
- * Sets the domain (FQDN) for a Coolify application.
+ * Generic update function for application properties.
  */
-export async function setDomain(appUuid: string, domain: string): Promise<void> {
+export async function updateApplication(appUuid: string, data: any): Promise<void> {
     const res = await fetch(`${COOLIFY_API_URL}/applications/${appUuid}`, {
         method: 'PATCH',
         headers: coolifyHeaders,
-        body: JSON.stringify({ fqdn: `https://${domain}` })
+        body: JSON.stringify(data)
     })
 
     if (!res.ok) {
         const err = await res.json().catch(() => ({ message: res.statusText }))
-        throw new Error(`Coolify setDomain failed: ${err.message || JSON.stringify(err)}`)
+        const errMsg = err?.errors ? JSON.stringify(err.errors) : (err.message || JSON.stringify(err))
+        throw new Error(`Coolify updateApplication failed: ${errMsg}`)
+    }
+}
+
+/**
+ * Sets the domain (FQDN) for a Coolify application.
+ * Note: If DNS is not yet pointed, this will fail validation. 
+ * We catch validation errors to allow the provision to complete.
+ */
+export async function setDomain(appUuid: string, domain: string): Promise<void> {
+    try {
+        await updateApplication(appUuid, { fqdn: `https://${domain}` })
+    } catch (error: any) {
+        if (error.message.includes('Validation failed')) {
+            console.warn(`[Coolify] FQDN validation failed for ${domain}. DNS might not be pointed yet. Skipping for now.`)
+            return
+        }
+        throw error
     }
 }
 
@@ -114,18 +132,9 @@ export async function setDomain(appUuid: string, domain: string): Promise<void> 
  * Sets the custom Docker options including network alias for internal communication.
  */
 export async function setNetworkAlias(appUuid: string, alias: string): Promise<void> {
-    const res = await fetch(`${COOLIFY_API_URL}/applications/${appUuid}`, {
-        method: 'PATCH',
-        headers: coolifyHeaders,
-        body: JSON.stringify({
-            custom_docker_run_options: `--network-alias ${alias}`
-        })
+    await updateApplication(appUuid, {
+        custom_docker_run_options: `--network-alias ${alias}`
     })
-
-    if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: res.statusText }))
-        throw new Error(`Coolify setNetworkAlias failed: ${err.message || JSON.stringify(err)}`)
-    }
 }
 
 /**

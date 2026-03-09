@@ -384,8 +384,9 @@ export async function POST(request: Request) {
             NODE_ENV: 'production',
         })
 
+        // Note: setDomain is now resilient to DNS validation failures
         await setDomain(storefrontUuid, storefrontDomain)
-        console.log(`   ✅ Dominio: ${storefrontDomain}`)
+        console.log(`   ✅ Dominio: ${storefrontDomain} (Configurado o pendiente de DNS)`)
 
         // ================================================
         // PASO 10: Trigger Deploy de ambos
