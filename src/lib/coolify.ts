@@ -39,7 +39,8 @@ export async function createApplication(payload: {
         server_uuid: payload.serverUuid,
         environment_uuid: payload.environmentUuid,
         environment_name: 'production',
-        git_repository: `https://github.com/${payload.githubOwner}/${payload.repoName}`,
+        github_app_uuid: 'x44cs40gw0cooogcckcok8kc', // UUID de la GitHub App en Coolify
+        git_repository: `${payload.githubOwner}/${payload.repoName}`,
         git_branch: payload.branch,
         build_pack: 'dockerfile',
         dockerfile_location: payload.dockerfileLocation,
@@ -48,7 +49,7 @@ export async function createApplication(payload: {
         instant_deploy: false,
     }
 
-    const res = await fetch(`${COOLIFY_API_URL}/applications/dockerfile`, {
+    const res = await fetch(`${COOLIFY_API_URL}/applications/private-github`, {
         method: 'POST',
         headers: coolifyHeaders,
         body: JSON.stringify(body)
