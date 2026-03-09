@@ -72,6 +72,7 @@ export async function POST(request: Request) {
         COOLIFY_API_TOKEN,
         COOLIFY_SERVER_UUID,
         COOLIFY_PROJECT_UUID,
+        COOLIFY_ENVIRONMENT_UUID,
     } = process.env
 
     const rollback = new RollbackStack()
@@ -104,6 +105,7 @@ export async function POST(request: Request) {
             !COOLIFY_API_TOKEN && 'COOLIFY_API_TOKEN',
             !COOLIFY_SERVER_UUID && 'COOLIFY_SERVER_UUID',
             !COOLIFY_PROJECT_UUID && 'COOLIFY_PROJECT_UUID',
+            !COOLIFY_ENVIRONMENT_UUID && 'COOLIFY_ENVIRONMENT_UUID',
         ].filter(Boolean)
 
         if (missingVars.length > 0) {
@@ -234,13 +236,13 @@ export async function POST(request: Request) {
         const coolifyBackend = await createApplication({
             projectUuid: COOLIFY_PROJECT_UUID!,
             serverUuid: COOLIFY_SERVER_UUID!,
+            environmentUuid: COOLIFY_ENVIRONMENT_UUID!,
             name: `${slugClean}-backend`,
             githubOwner: GITHUB_OWNER,
             repoName: repoBackendName,
             branch: 'main',
             dockerfileLocation: '/Dockerfile',
             ports: [9000],
-            environmentUuid: '',
         })
 
         const backendUuid = coolifyBackend.uuid
@@ -282,13 +284,13 @@ export async function POST(request: Request) {
         const coolifyStorefront = await createApplication({
             projectUuid: COOLIFY_PROJECT_UUID!,
             serverUuid: COOLIFY_SERVER_UUID!,
+            environmentUuid: COOLIFY_ENVIRONMENT_UUID!,
             name: `${slugClean}-storefront`,
             githubOwner: GITHUB_OWNER,
             repoName: repoStorefrontName,
             branch: 'main',
             dockerfileLocation: '/Dockerfile',
             ports: [8000],
-            environmentUuid: '',
         })
 
         const storefrontUuid = coolifyStorefront.uuid

@@ -21,38 +21,43 @@ export interface CoolifyApplication {
 
 /**
  * Creates a new Dockerfile-based application in Coolify linked to a GitHub repo.
+ * Uses the /applications/dockerfile endpoint with all required fields.
  */
 export async function createApplication(payload: {
     projectUuid: string
     serverUuid: string
+    environmentUuid: string
     name: string
     githubOwner: string
     repoName: string
     branch: string
     dockerfileLocation: string
     ports: number[]
-    environmentUuid: string
 }): Promise<CoolifyApplication> {
+    const body = {
+        project_uuid: payload.projectUuid,
+        server_uuid: payload.serverUuid,
+        environment_uuid: payload.environmentUuid,
+        environment_name: 'production',
+        git_repository: `https://github.com/${payload.githubOwner}/${payload.repoName}`,
+        git_branch: payload.branch,
+        build_pack: 'dockerfile',
+        dockerfile_location: payload.dockerfileLocation,
+        name: payload.name,
+        ports_exposes: payload.ports.join(','),
+        instant_deploy: false,
+    }
+
     const res = await fetch(`${COOLIFY_API_URL}/applications/dockerfile`, {
         method: 'POST',
         headers: coolifyHeaders,
-        body: JSON.stringify({
-            project_uuid: payload.projectUuid,
-            server_uuid: payload.serverUuid,
-            environment_name: 'production',
-            git_repository: `https://github.com/${payload.githubOwner}/${payload.repoName}`,
-            git_branch: payload.branch,
-            build_pack: 'dockerfile',
-            dockerfile_location: payload.dockerfileLocation,
-            name: payload.name,
-            ports_exposes: payload.ports.join(','),
-            instant_deploy: false,
-        })
+        body: JSON.stringify(body)
     })
 
     if (!res.ok) {
         const err = await res.json().catch(() => ({ message: res.statusText }))
-        throw new Error(`Coolify createApplication failed: ${err.message || JSON.stringify(err)}`)
+        const errMsg = err?.errors ? JSON.stringify(err.errors) : (err.message || JSON.stringify(err))
+        throw new Error(`Coolify createApplication failed: ${errMsg}`)
     }
 
     const data = await res.json()
