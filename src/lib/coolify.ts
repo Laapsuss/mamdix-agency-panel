@@ -47,9 +47,10 @@ export async function createApplication(payload: {
         name: payload.name,
         ports_exposes: payload.ports.join(','),
         instant_deploy: false,
+        destination_uuid: 'ng00sggsgow4cg0soc8c80gw', // UUID del destino Docker Standalone
     }
 
-    const res = await fetch(`${COOLIFY_API_URL}/applications/private-github`, {
+    const res = await fetch(`${COOLIFY_API_URL}/applications/private-github-app`, {
         method: 'POST',
         headers: coolifyHeaders,
         body: JSON.stringify(body)

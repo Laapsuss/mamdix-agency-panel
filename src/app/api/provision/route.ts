@@ -115,7 +115,7 @@ export async function POST(request: Request) {
         // ================================================
         // PASO 1: Crear proyecto en Supabase
         // ================================================
-        console.log(`[1/9] Creando proyecto Supabase para ${clientName}...`)
+        console.log(`[1/10] Creando proyecto Supabase para ${clientName}...`)
         const supabaseRes = await fetch('https://api.supabase.com/v1/projects', {
             method: 'POST',
             headers: {
