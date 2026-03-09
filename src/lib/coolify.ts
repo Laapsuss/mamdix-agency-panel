@@ -40,12 +40,13 @@ export async function createApplication(payload: {
         environment_uuid: payload.environmentUuid,
         environment_name: 'production',
         github_app_uuid: 'x44cs40gw0co40wwwgo8ocoo', // UUID REAL de la GitHub App en Coolify
-        git_repository: `${payload.githubOwner}/${payload.repoName}`,
+        git_repository: `https://github.com/${payload.githubOwner}/${payload.repoName}`,
         git_branch: payload.branch,
         build_pack: 'dockerfile',
         dockerfile_location: payload.dockerfileLocation,
         name: payload.name,
-        ports_exposes: payload.ports.join(','),
+        description: `Servicio desplegado automáticamente para ${payload.name}`,
+        ports_exposes: payload.ports[0].toString(),
         instant_deploy: false,
         destination_uuid: 'ng00sggsgow4cg0soc8c80gw', // UUID del destino Docker Standalone
     }
