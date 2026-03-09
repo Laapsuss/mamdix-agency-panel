@@ -142,10 +142,11 @@ export async function POST(request: Request) {
 
         rollback.push(async () => {
             console.log(`[Rollback] Eliminando proyecto Supabase ${supabaseProjectId}...`)
-            await fetch(`https://api.supabase.com/v1/projects/${supabaseProjectId}`, {
+            const res = await fetch(`https://api.supabase.com/v1/projects/${supabaseProjectId}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${SUPABASE_ACCESS_TOKEN}` }
             })
+            if (!res.ok) console.error(`[Rollback] Error Supabase: ${res.status}`)
         })
 
         // ================================================
@@ -225,10 +226,20 @@ export async function POST(request: Request) {
         console.log(`   ✅ Repo ${repoBackendName} creado.`)
         rollback.push(async () => {
             console.log(`[Rollback] Eliminando repo GitHub ${repoBackendName}...`)
-            await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${repoBackendName}`, {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${repoBackendName}`, {
                 method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github+json' }
+                headers: {
+                    'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github+json',
+                    'X-GitHub-Api-Version': '2022-11-28'
+                }
             })
+            if (!res.ok) {
+                const txt = await res.text()
+                console.error(`[Rollback] Error al borrar repo ${repoBackendName}: ${res.status} - ${txt}`)
+            } else {
+                console.log(`   ✅ Repo ${repoBackendName} borrado de GitHub.`)
+            }
         })
 
         // ================================================
@@ -262,10 +273,20 @@ export async function POST(request: Request) {
         console.log(`   ✅ Repo ${repoStorefrontName} creado.`)
         rollback.push(async () => {
             console.log(`[Rollback] Eliminando repo GitHub ${repoStorefrontName}...`)
-            await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${repoStorefrontName}`, {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${repoStorefrontName}`, {
                 method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github+json' }
+                headers: {
+                    'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github+json',
+                    'X-GitHub-Api-Version': '2022-11-28'
+                }
             })
+            if (!res.ok) {
+                const txt = await res.text()
+                console.error(`[Rollback] Error al borrar repo ${repoStorefrontName}: ${res.status} - ${txt}`)
+            } else {
+                console.log(`   ✅ Repo ${repoStorefrontName} borrado de GitHub.`)
+            }
         })
 
         // ================================================

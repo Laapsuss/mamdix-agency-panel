@@ -39,7 +39,7 @@ export async function createApplication(payload: {
         server_uuid: payload.serverUuid,
         environment_uuid: payload.environmentUuid,
         environment_name: 'production',
-        github_app_uuid: 'x44cs40gw0cooogcckcok8kc', // UUID de la GitHub App en Coolify
+        github_app_uuid: 'x44cs40gw0co40wwwgo8ocoo', // UUID REAL de la GitHub App en Coolify
         git_repository: `${payload.githubOwner}/${payload.repoName}`,
         git_branch: payload.branch,
         build_pack: 'dockerfile',
