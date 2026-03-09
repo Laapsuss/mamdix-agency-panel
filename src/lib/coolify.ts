@@ -67,27 +67,30 @@ export async function createApplication(payload: {
 }
 
 /**
- * Sets (bulk upsert) environment variables on a Coolify application.
+ * Sets environment variables on a Coolify application by creating them one by one.
+ * Bulk endpoint is not available or consistent in v4, so we loop for reliability.
  */
 export async function setEnvironmentVariables(
     appUuid: string,
     envs: Record<string, string>
 ): Promise<void> {
-    const envArray = Object.entries(envs).map(([key, value]) => ({
-        key,
-        value,
-        is_preview: false,
-    }))
+    for (const [key, value] of Object.entries(envs)) {
+        const res = await fetch(`${COOLIFY_API_URL}/applications/${appUuid}/envs`, {
+            method: 'POST',
+            headers: coolifyHeaders,
+            body: JSON.stringify({
+                key,
+                value,
+                is_preview: false,
+            })
+        })
 
-    const res = await fetch(`${COOLIFY_API_URL}/applications/${appUuid}/envs/bulk`, {
-        method: 'POST',
-        headers: coolifyHeaders,
-        body: JSON.stringify({ data: envArray })
-    })
-
-    if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: res.statusText }))
-        throw new Error(`Coolify setEnvironmentVariables failed: ${err.message || JSON.stringify(err)}`)
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ message: res.statusText }))
+            // If already exists, we might want to PATCH or ignore, but for new apps we expect success.
+            console.error(`[Coolify] Failed to set env ${key}:`, err.message || JSON.stringify(err))
+            throw new Error(`Coolify setEnvironmentVariables failed for ${key}: ${err.message || JSON.stringify(err)}`)
+        }
     }
 }
 
