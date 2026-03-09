@@ -304,6 +304,7 @@ export async function POST(request: Request) {
             dockerfileLocation: '/Dockerfile',
             ports: [9000],
             githubToken: GITHUB_TOKEN!,
+            domain: backendDomain,
         })
 
         const backendUuid = coolifyBackend.uuid
@@ -360,6 +361,7 @@ export async function POST(request: Request) {
             dockerfileLocation: '/Dockerfile',
             ports: [8000],
             githubToken: GITHUB_TOKEN!,
+            domain: storefrontDomain,
         })
 
         const storefrontUuid = coolifyStorefront.uuid

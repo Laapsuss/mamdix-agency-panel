@@ -34,6 +34,7 @@ export async function createApplication(payload: {
     dockerfileLocation: string
     ports: number[]
     githubToken: string
+    domain?: string
 }): Promise<CoolifyApplication> {
     const body = {
         project_uuid: payload.projectUuid,
@@ -48,6 +49,7 @@ export async function createApplication(payload: {
         description: `Automated deploy for ${payload.name}`,
         ports_exposes: payload.ports[0].toString(),
         instant_deploy: false,
+        domains: payload.domain ? `https://${payload.domain}` : undefined,
     }
 
     const res = await fetch(`${COOLIFY_API_URL}/applications/public`, {
@@ -115,10 +117,11 @@ export async function updateApplication(appUuid: string, data: any): Promise<voi
  * Sets the domain (FQDN) for a Coolify application.
  * Note: If DNS is not yet pointed, this will fail validation. 
  * We catch validation errors to allow the provision to complete.
+ * Important: We use 'domains' key instead of 'fqdn' for compatibility with public apps.
  */
 export async function setDomain(appUuid: string, domain: string): Promise<void> {
     try {
-        await updateApplication(appUuid, { fqdn: `https://${domain}` })
+        await updateApplication(appUuid, { domains: `https://${domain}` })
     } catch (error: any) {
         if (error.message.includes('Validation failed')) {
             console.warn(`[Coolify] FQDN validation failed for ${domain}. DNS might not be pointed yet. Skipping for now.`)
