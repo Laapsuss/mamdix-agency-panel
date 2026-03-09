@@ -151,14 +151,53 @@ export async function POST(request: Request) {
         // ================================================
         // PASO 2: Esperar que Supabase esté listo
         // ================================================
-        console.log(`[2/9] Esperando que Supabase esté activo (~30-60s)...`)
+        console.log(`[2/10] Esperando que Supabase esté activo (~30-60s)...`)
         const databaseUrl = await waitForSupabase(supabaseProjectId, SUPABASE_ACCESS_TOKEN!)
         console.log(`   ✅ Supabase activo.`)
 
         // ================================================
+        // PASO 2.5: Obtener API Keys de Supabase y Crear Bucket S3
+        // ================================================
+        console.log(`[3/10] Configuracion de Supabase Storage S3...`)
+
+        // 1. Obtener API Keys
+        const keysRes = await fetch(`https://api.supabase.com/v1/projects/${supabaseProjectId}/api-keys`, {
+            headers: { 'Authorization': `Bearer ${SUPABASE_ACCESS_TOKEN}` }
+        })
+        if (!keysRes.ok) throw new Error(`Error obteniendo API Keys de Supabase: ${await keysRes.text()}`)
+        const keys = await keysRes.json()
+        const serviceRoleKey = keys.find((k: any) => k.name === 'service_role')?.api_key
+        if (!serviceRoleKey) throw new Error('No se encontró la clave service_role en Supabase')
+
+        // 2. Crear Bucket
+        const BUCKET_NAME = 'medusa-media'
+        const bucketRes = await fetch(`https://${supabaseProjectId}.supabase.co/storage/v1/bucket`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${serviceRoleKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: BUCKET_NAME,
+                name: BUCKET_NAME,
+                public: true, // El bucket debe ser público para que se puedan ver las imágenes
+            })
+        })
+        if (!bucketRes.ok) {
+            const errBucket = await bucketRes.json()
+            console.warn(`⚠️ Advertencia creando bucket: ${JSON.stringify(errBucket)}`)
+        } else {
+            console.log(`   ✅ Bucket S3 '${BUCKET_NAME}' creado como público.`)
+        }
+
+        const supabaseS3Region = 'eu-west-1'
+        const supabaseS3Url = `https://${supabaseProjectId}.supabase.co/storage/v1/s3`
+        const supabasePublicUrl = `https://${supabaseProjectId}.supabase.co/storage/v1/object/public/${BUCKET_NAME}`
+
+        // ================================================
         // PASO 3: Clonar repo Backend en GitHub
         // ================================================
-        console.log(`[3/9] Clonando repo Backend en GitHub...`)
+        console.log(`[4/10] Clonando repo Backend en GitHub...`)
         const githubResBackend = await fetch(
             `https://api.github.com/repos/${GITHUB_OWNER}/mamdix-core-backend/generate`,
             {
@@ -195,7 +234,7 @@ export async function POST(request: Request) {
         // ================================================
         // PASO 4: Clonar repo Storefront en GitHub
         // ================================================
-        console.log(`[4/9] Clonando repo Storefront en GitHub...`)
+        console.log(`[5/10] Clonando repo Storefront en GitHub...`)
         const githubResStore = await fetch(
             `https://api.github.com/repos/${GITHUB_OWNER}/mamdix-core-storefront/generate`,
             {
@@ -232,7 +271,7 @@ export async function POST(request: Request) {
         // ================================================
         // PASO 5: Crear servicio Backend en Coolify
         // ================================================
-        console.log(`[5/9] Creando servicio Backend en Coolify...`)
+        console.log(`[6/10] Creando servicio Backend en Coolify...`)
         const coolifyBackend = await createApplication({
             projectUuid: COOLIFY_PROJECT_UUID!,
             serverUuid: COOLIFY_SERVER_UUID!,
@@ -256,7 +295,7 @@ export async function POST(request: Request) {
         // ================================================
         // PASO 6: Configurar ENV del Backend en Coolify
         // ================================================
-        console.log(`[6/9] Inyectando ENV del Backend en Coolify...`)
+        console.log(`[7/10] Inyectando ENV del Backend en Coolify (Incluyendo S3)...`)
         await setEnvironmentVariables(backendUuid, {
             DATABASE_URL: databaseUrl,
             MEDUSA_BACKEND_URL: `https://${backendDomain}`,
@@ -266,13 +305,20 @@ export async function POST(request: Request) {
             JWT_SECRET: crypto.randomUUID(),
             COOKIE_SECRET: crypto.randomUUID(),
             NODE_ENV: 'production',
+            // S3 Supabase Storage variables
+            S3_URL: supabasePublicUrl,
+            S3_BUCKET: BUCKET_NAME,
+            S3_REGION: supabaseS3Region,
+            S3_ENDPOINT: supabaseS3Url,
+            S3_ACCESS_KEY_ID: supabaseProjectId,
+            S3_SECRET_ACCESS_KEY: serviceRoleKey,
         })
         console.log(`   ✅ ENV Backend configurado.`)
 
         // ================================================
         // PASO 7: Configurar Dominio y Network Alias del Backend
         // ================================================
-        console.log(`[7/9] Configurando dominio y alias de red del Backend...`)
+        console.log(`[8/10] Configurando dominio y alias de red del Backend...`)
         await setDomain(backendUuid, backendDomain)
         await setNetworkAlias(backendUuid, backendNetworkAlias)
         console.log(`   ✅ Dominio: ${backendDomain} / Alias: ${backendNetworkAlias}`)
@@ -280,7 +326,7 @@ export async function POST(request: Request) {
         // ================================================
         // PASO 8: Crear servicio Storefront en Coolify
         // ================================================
-        console.log(`[8/9] Creando servicio Storefront en Coolify...`)
+        console.log(`[9/10] Creando servicio Storefront en Coolify...`)
         const coolifyStorefront = await createApplication({
             projectUuid: COOLIFY_PROJECT_UUID!,
             serverUuid: COOLIFY_SERVER_UUID!,
@@ -304,7 +350,7 @@ export async function POST(request: Request) {
         // ================================================
         // PASO 9: Configurar ENV y Dominio del Storefront
         // ================================================
-        console.log(`[9/9] Inyectando ENV del Storefront y configurando dominio...`)
+        console.log(`[10/10] Inyectando ENV del Storefront y configurando dominio...`)
 
         // We need a publishable key — for now leave a placeholder; it will be filled by user after first backend deploy
         await setEnvironmentVariables(storefrontUuid, {
@@ -321,7 +367,7 @@ export async function POST(request: Request) {
         // ================================================
         // PASO 10: Trigger Deploy de ambos
         // ================================================
-        console.log(`[10/10] Disparando deploy de Backend y Storefront...`)
+        console.log(`[🚀] Disparando deploy de Backend y Storefront...`)
         await triggerDeploy(backendUuid)
         await triggerDeploy(storefrontUuid)
         console.log(`   ✅ Deploys iniciados.`)
