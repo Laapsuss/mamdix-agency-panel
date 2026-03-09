@@ -142,16 +142,19 @@ export async function setNetworkAlias(appUuid: string, alias: string): Promise<v
 
 /**
  * Triggers a new deployment for a Coolify application.
+ * Note: In v4, we use the global /deploy endpoint with the app UUID in the body.
  */
 export async function triggerDeploy(appUuid: string): Promise<void> {
-    const res = await fetch(`${COOLIFY_API_URL}/applications/${appUuid}/deploy`, {
+    const res = await fetch(`${COOLIFY_API_URL}/deploy`, {
         method: 'POST',
         headers: coolifyHeaders,
+        body: JSON.stringify({ uuid: appUuid })
     })
 
     if (!res.ok) {
         const err = await res.json().catch(() => ({ message: res.statusText }))
-        throw new Error(`Coolify triggerDeploy failed: ${err.message || JSON.stringify(err)}`)
+        const errMsg = err?.errors ? JSON.stringify(err.errors) : (err.message || JSON.stringify(err))
+        throw new Error(`Coolify triggerDeploy failed: ${errMsg}`)
     }
 }
 
