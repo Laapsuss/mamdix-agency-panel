@@ -33,25 +33,24 @@ export async function createApplication(payload: {
     branch: string
     dockerfileLocation: string
     ports: number[]
+    githubToken: string
 }): Promise<CoolifyApplication> {
     const body = {
         project_uuid: payload.projectUuid,
         server_uuid: payload.serverUuid,
         environment_uuid: payload.environmentUuid,
         environment_name: 'production',
-        github_app_uuid: 'x44cs40gw0co40wwwgo8ocoo', // UUID REAL de la GitHub App en Coolify
-        git_repository: `https://github.com/${payload.githubOwner}/${payload.repoName}`,
+        git_repository: `https://x-access-token:${payload.githubToken}@github.com/${payload.githubOwner}/${payload.repoName}.git`,
         git_branch: payload.branch,
         build_pack: 'dockerfile',
         dockerfile_location: payload.dockerfileLocation,
         name: payload.name,
-        description: `Servicio desplegado automáticamente para ${payload.name}`,
+        description: `Automated deploy for ${payload.name}`,
         ports_exposes: payload.ports[0].toString(),
         instant_deploy: false,
-        destination_uuid: 'ng00sggsgow4cg0soc8c80gw', // UUID del destino Docker Standalone
     }
 
-    const res = await fetch(`${COOLIFY_API_URL}/applications/private-github-app`, {
+    const res = await fetch(`${COOLIFY_API_URL}/applications/public`, {
         method: 'POST',
         headers: coolifyHeaders,
         body: JSON.stringify(body)
